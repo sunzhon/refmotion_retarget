@@ -210,6 +210,7 @@ def main(cfg : DictConfig) -> None:
     logger.info(f"Motion file is: {motion_file}")
     motion_data = joblib.load(motion_file)
     motion_data_keys = list(motion_data.keys())
+
     logger.info(f"motion keys: {motion_data_keys}")
 
     # move robot to origin location of env coordination
@@ -263,13 +264,18 @@ def main(cfg : DictConfig) -> None:
             add_visual_capsule(viewer.user_scn, np.zeros(3), np.array([0.001, 0, 0]), 0.04, np.array([1, 0, 0, 1]))
         for _ in range(20):
             add_visual_capsule(viewer.user_scn, np.zeros(3), np.array([0.001, 0, 0]), 0.04, np.array([0, 1, 0, 1]))
+
         # Close the viewer automatically after 30 wall-seconds.
+        curr_motion_key = motion_data_keys[motion_id]
+        curr_motion = motion_data[curr_motion_key]
+        frame_num = curr_motion['pose_aa'].shape[0]
+        fps = curr_motion["fps"]
+        logger.info(f"curr_motion_key: {curr_motion_key}, fps: {fps}")
+        #import pdb;pdb.set_trace()
+
         while viewer.is_running():
             cam.type=mujoco.mjtCamera.mjCAMERA_TRACKING
             step_start = time.time()
-            curr_motion_key = motion_data_keys[motion_id]
-            curr_motion = motion_data[curr_motion_key]
-            frame_num = curr_motion['pose_aa'].shape[0]
             root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
             root_rot = curr_motion["root_rot"]
             dof_pos = curr_motion["dof_pos"]
@@ -277,8 +283,6 @@ def main(cfg : DictConfig) -> None:
             robot_bodies = curr_motion['robot_joints'] if "robot_joints" in curr_motion.keys() else None
             joint_names = [mj_model.joint(i).name for i in range(1, mj_model.njnt)]
             body_names = [mj_model.body(i).name for i in range(1, mj_model.nbody)]
-            fps = curr_motion["fps"]
-
 
             dt = 1.0/fps
             curr_frame = int(time_step/dt) % frame_num
