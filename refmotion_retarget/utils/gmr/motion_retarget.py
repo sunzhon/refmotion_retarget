@@ -64,11 +64,13 @@ class GeneralMotionRetargeting:
         else:
             ratio = 1.0
             
+        if verbose:
+            print(f"Actual Human data height ratio of the assume human height: {ratio}")
+
         # adjust the human scale table
         for key in ik_config["human_scale_table"].keys():
             ik_config["human_scale_table"][key] = ik_config["human_scale_table"][key] * ratio
     
-
         # used for retargeting
         self.ik_match_table1 = ik_config["ik_match_table1"]
         self.ik_match_table2 = ik_config["ik_match_table2"]
@@ -98,6 +100,7 @@ class GeneralMotionRetargeting:
         if use_velocity_limit:
             VELOCITY_LIMITS = {k: 3*np.pi for k in self.robot_motor_names.keys()}
             self.ik_limits.append(mink.VelocityLimit(self.model, VELOCITY_LIMITS)) 
+            import pdb;pdb.set_trace()
 
             
         self.setup_retarget_configuration()
@@ -150,13 +153,19 @@ class GeneralMotionRetargeting:
     def update_targets(self, human_data, offset_to_ground=False):
         # scale human data in local frame
         human_data = self.to_numpy(human_data)
+        # using scale table to scale global pos of body links
         human_data = self.scale_human_data(human_data, self.human_root_name, self.human_scale_table)
+        # using ik_match_table rotation and pos offset
         human_data = self.offset_human_data(human_data, self.pos_offsets1, self.rot_offsets1)
+        # shfit to ground by a shift ground value
         human_data = self.apply_ground_offset(human_data)
+
+        # shfit to ground automatically
         if offset_to_ground:
             human_data = self.offset_human_data_to_ground(human_data)
         self.scaled_human_data = human_data
 
+        # ik solve to find the dof pos
         if self.use_ik_match_table1:
             for body_name in self.human_body_to_task1.keys():
                 task = self.human_body_to_task1[body_name]

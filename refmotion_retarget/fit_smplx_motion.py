@@ -20,9 +20,7 @@ HERE = pathlib.Path(__file__).parent
 
 def process_motion(key_name, key_name_to_pkls, cfg):
     # Load SMPLX trajectory
-    smplx_data, body_model, smplx_output, actual_human_height = load_smplx_file(
-        key_name_to_pkls[key_name], os.path.join(HERE,cfg.gmr.smplx_folder)
-    )
+    smplx_data, body_model, smplx_output, actual_human_height = load_smplx_file(key_name_to_pkls[key_name], os.path.join(HERE, cfg.gmr.smplx_folder))
     
     # align fps
     tgt_fps = 30
@@ -33,6 +31,7 @@ def process_motion(key_name, key_name_to_pkls, cfg):
         actual_human_height=actual_human_height,
         src_human="smplx",
         tgt_robot=cfg.gmr.get("robot"),
+        use_velocity_limit=False
     )
     
     qpos_list = []
@@ -46,7 +45,7 @@ def process_motion(key_name, key_name_to_pkls, cfg):
         # Update task targets.
         smplx_data = smplx_data_frames[i]
         # retarget
-        qpos = retarget.retarget(smplx_data)
+        qpos = retarget.retarget(smplx_data,False)# offset ground 
         # save qpos
         qpos_list.append(qpos)
         human_motion_data.append(retarget.scaled_human_data)
