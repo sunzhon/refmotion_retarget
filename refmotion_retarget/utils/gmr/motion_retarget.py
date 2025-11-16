@@ -155,7 +155,7 @@ class GeneralMotionRetargeting:
         human_data = self.to_numpy(human_data)
         # using scale table to scale global pos of body links
         human_data = self.scale_human_data(human_data, self.human_root_name, self.human_scale_table)
-        # using ik_match_table rotation and pos offset
+        # using ik_match_table rotation and pos offset in global world frame
         human_data = self.offset_human_data(human_data, self.pos_offsets1, self.rot_offsets1)
         # shfit to ground by a shift ground value
         human_data = self.apply_ground_offset(human_data)
@@ -280,6 +280,7 @@ class GeneralMotionRetargeting:
         for body_name in human_data.keys():
             pos, quat = human_data[body_name]
             offset_human_data[body_name] = [pos, quat]
+
             # apply rotation offset first
             updated_quat = (R.from_quat(quat, scalar_first=True) * rot_offsets[body_name]).as_quat(scalar_first=True)
             offset_human_data[body_name][1] = updated_quat

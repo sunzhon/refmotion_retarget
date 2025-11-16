@@ -34,20 +34,30 @@ logging.basicConfig(
 logger = logging.getLogger("vis_mj")
 
 
-def add_visual_capsule(scene, point1, point2, radius, rgba):
+def draw_capsule(v, pos=np.zeros(3), radius=0.03, rgba=np.array([1,0,0,1])):
     """Adds one capsule to an mjvScene."""
-    if scene.ngeom >= scene.maxgeom:
+    if v.user_scn.ngeom >= v.user_scn.maxgeom:
         return
-    scene.ngeom += 1  # increment ngeom
     # initialise a new capsule, add it to the scene using mjv_makeConnector
-    mj.mjv_initGeom(scene.geoms[scene.ngeom-1],
-                        mj.mjtGeom.mjGEOM_CAPSULE, np.zeros(3),
-                        np.zeros(3), np.zeros(9), rgba.astype(np.float32))
-    mj.mjv_connector(scene.geoms[scene.ngeom-1],
-                            mj.mjtGeom.mjGEOM_CAPSULE, radius,
-                            point1.reshape(3,1),
-                            point2.reshape(3,1))
+    mj.mjv_initGeom(
+        v.user_scn.geoms[v.user_scn.ngeom],
+        type=mj.mjtGeom.mjGEOM_CAPSULE, 
+        size=np.zeros(3),
+        pos=pos, 
+        mat=np.zeros(9), 
+        rgba=rgba.astype(np.float32)
+        )
 
+    mj.mjv_connector(
+        v.user_scn.geoms[v.user_scn.ngeom],
+        type=mj.mjtGeom.mjGEOM_CAPSULE,
+        width=radius,
+        from_=pos.reshape(3,1),
+        to=pos+np.array([0.001,0,0])
+        )
+        
+
+    v.user_scn.ngeom += 1  # increment ngeom
 
 def draw_frame(
     pos,
@@ -118,7 +128,7 @@ def save_motion_example(curr_motion, curr_motion_key, motion_file, joint_names, 
             raise ValueError(f"'{name}' missing and fallback_shape is None")
 
 
-    root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
+    root_trans = curr_motion['root_trans']
     root_rot = curr_motion["root_rot"]
     dof_pos = curr_motion["dof_pos"] if "dof_pos" in curr_motion.keys() else curr_motion["dof"]
     fps = curr_motion["fps"]
@@ -230,10 +240,9 @@ def main(cfg : DictConfig) -> None:
     # move robot to origin location of env coordination
     logger.info(f"📌 Move the robot to env origin location!")
     for key, data in motion_data.items():
-
         # reset trans_offset to original point
-        init_trans = motion_data[key]["root_trans_offset"][0,:]
-        motion_data[key]["root_trans_offset"][:,:2]-=init_trans[:2]
+        init_trans = motion_data[key]["root_trans"][0,:]
+        motion_data[key]["root_trans"][:,:2]-=init_trans[:2]
         #motion_data[key]["fps"] = 33
         fps = motion_data[key]["fps"]
         logger.info(f"data name: {key}, fps: {fps}")
@@ -242,7 +251,7 @@ def main(cfg : DictConfig) -> None:
         if "global_translation_extend" not in motion_data[key]:
             logger.info("[update_fk] Running humanoid forward kinematics...")
             humanoid_fk = Humanoid_Batch(cfg.robot)  # Load forward kinematics model
-            trans = torch.from_numpy(motion_data[key]['root_trans_offset']).float()
+            trans = torch.from_numpy(motion_data[key]['root_trans']).float()
             pose_aa = torch.from_numpy(motion_data[key]['pose_aa']).float() # shape: frame num, 74 (pose params theta: 23+3+3)
             fk_return = humanoid_fk.fk_batch(pose_aa[None,:], trans[None,:],dt=1.0/fps, return_full=True) # batch of frame_num
 
@@ -263,15 +272,15 @@ def main(cfg : DictConfig) -> None:
             # calibrate robot height
             combined_mesh = humanoid_fk.mesh_fk(pose_aa[None, :1].detach(), trans[None, :1].detach())
             height_diff = np.asarray(combined_mesh.vertices)[..., 2].min()
-            motion_data[key]["root_trans_offset"][..., 2] -= height_diff
 
-            smpl_joints = motion_data[key].get("smpl_joints")
-            if smpl_joints is not None:
-                smpl_joints[..., 2] -= height_diff
-            
-            robot_joints = motion_data[key].get("robot_joints") 
-            if robot_joints is not None:
-                robot_joints[..., 2] -= height_diff
+            #smpl_joints = motion_data[key].get("smpl_joints")
+            #if smpl_joints is not None:
+            #    smpl_joints[..., 2] -= height_diff
+            #
+            #import pdb;pdb.set_trace()
+            #robot_joints = motion_data[key].get("robot_joints") 
+            #if robot_joints is not None:
+            #    robot_joints[..., 2] -= height_diff
 
 
     with mj.viewer.launch_passive(mj_model, mj_data, key_callback=key_call_back, show_left_ui=False, show_right_ui=False) as viewer:
@@ -279,21 +288,14 @@ def main(cfg : DictConfig) -> None:
         cam.distance = 4.0 ;cam.azimuth = 135; cam.elevation = -10; cam.lookat = [0,0,0]
         cam.type=mj.mjtCamera.mjCAMERA_TRACKING;cam.trackbodyid=1;
 
-        # adding gemo to dislay key joint position
-        for _ in range(20):
-            add_visual_capsule(viewer.user_scn, np.zeros(3), np.array([0.001, 0, 0]), 0.04, np.array([1, 0, 0, 1]))
-        for _ in range(20):
-            add_visual_capsule(viewer.user_scn, np.zeros(3), np.array([0.001, 0, 0]), 0.04, np.array([0, 1, 0, 1]))
-
         # Close the viewer automatically after 30 wall-seconds.
         curr_motion_key = motion_data_keys[motion_id]
         curr_motion = motion_data[curr_motion_key]
         frame_num = curr_motion['pose_aa'].shape[0]
         fps = curr_motion["fps"]
         logger.info(f"curr_motion_key: {curr_motion_key}, fps: {fps}")
-        #import pdb;pdb.set_trace()
         # Fetch current motion
-        root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
+        root_trans = curr_motion['root_trans']
         root_rot = curr_motion["root_rot"]
         dof_pos = curr_motion["dof_pos"]
         smpl_joints = curr_motion['smpl_joints'] if "smpl_joints" in curr_motion.keys() else None
@@ -321,21 +323,21 @@ def main(cfg : DictConfig) -> None:
                 time_step += dt
             
             # visualizing smpl joints
+            viewer.user_scn.ngeom = 0
+            draw_capsule(viewer)
             if smpl_joints is not None:
-                for i in range(smpl_joints.shape[1]):
-                    viewer.user_scn.geoms[i].pos = smpl_joints[curr_frame, i]
+                for idx in range(smpl_joints.shape[1]):
+                    draw_capsule(viewer, pos=smpl_joints[curr_frame,idx],rgba=np.array([1,0,0,1]))
 
             # visualizing robot joints using sphere
             # get robot joint index
             robot_body_names = [i[0] for i in cfg.robot.joint_matches]
             if robot_bodies is not None:
                 for idx in range(len(robot_body_names)):
-                    viewer.user_scn.geoms[20+idx].pos = robot_bodies[curr_frame, idx]
+                    draw_capsule(viewer, pos=robot_bodies[curr_frame,idx],rgba=np.array([0,1,0,1]))
 
             # visualizing robot joints using frames
             if human_motion_data is not None:
-                # Clean custom geometry
-                viewer.user_scn.ngeom = 0
                 # Draw the task targets for reference
                 human_pos_offset=np.array([0.0, 0.0, 0.0])
                 show_human_body_name=False

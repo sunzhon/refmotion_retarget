@@ -38,16 +38,18 @@ def load_smplx_file(smplx_file, smplx_body_model_path):
         gender=str(smplx_data["gender"]),
         use_pca=False,
     )
-    # print(smplx_data["pose_body"].shape)
-    # print(smplx_data["betas"].shape)
-    # print(smplx_data["root_orient"].shape)
-    # print(smplx_data["trans"].shape)
+    # reset root trans to world origal points (Tao Sun)
+    init_trans = smplx_data["trans"][0,:]
+    trans = smplx_data["trans"]
+    trans[:,:2]-=init_trans[:2]
+
+    # stack smplx output
     num_frames = smplx_data["poses"].shape[0]
     smplx_output = body_model(
         betas=torch.tensor(smplx_data["betas"]).float().view(1, -1), # (16,)
         global_orient=torch.tensor(smplx_data["poses"][:,:3]).float(), # (N, 3)
         body_pose=torch.tensor(smplx_data["poses"][:,3:66]).float(), # (N, 63)
-        transl=torch.tensor(smplx_data["trans"]).float(), # (N, 3)
+        transl=torch.tensor(trans).float(), # (N, 3)
         left_hand_pose=torch.zeros(num_frames, 45).float(),
         right_hand_pose=torch.zeros(num_frames, 45).float(),
         jaw_pose=torch.zeros(num_frames, 3).float(),

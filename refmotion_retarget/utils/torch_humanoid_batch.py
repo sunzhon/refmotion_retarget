@@ -54,6 +54,7 @@ class Humanoid_Batch:
         self.joint_names = [copy.deepcopy(mjcf_data["body_to_joint"])[body] for body in self.body_names[1:]]
         self._parents = mjcf_data['parent_indices']
         self.body_names_augment = copy.deepcopy(mjcf_data['node_names'])
+
         self._offsets = mjcf_data['local_translation'][None, ].to(device)
         self._local_rotation = mjcf_data['local_rotation'][None, ].to(device)
         self.actuated_joints_idx = np.array([self.body_names.index(k) for k, v in mjcf_data['body_to_joint'].items()])
@@ -155,10 +156,15 @@ class Humanoid_Batch:
 
         
     def fk_batch(self, pose, trans, convert_to_mat=True, return_full = False, dt=1/30):
+        """
+        pose: pose_aa of links
+        trans: root trans
+
+        """
         device, dtype = pose.device, pose.dtype
         pose_input = pose.clone()
         B, seq_len = pose.shape[:2]
-        pose = pose[..., :len(self._parents), :] # H1 fitted joints might have extra joints
+        pose = pose[..., :len(self._parents), :] 
         
         if convert_to_mat:
             pose_quat = tRot.axis_angle_to_quaternion(pose.clone())
@@ -169,6 +175,7 @@ class Humanoid_Batch:
         if pose_mat.shape != 5:
             pose_mat = pose_mat.reshape(B, seq_len, -1, 3, 3)
         J = pose_mat.shape[2] - 1  # Exclude root
+
         wbody_pos, wbody_mat = self.forward_kinematics_batch(pose_mat[:, :, 1:], pose_mat[:, :, 0:1], trans)
         
         return_dict = EasyDict()
@@ -217,7 +224,7 @@ class Humanoid_Batch:
     
     def forward_kinematics_batch(self, rotations, root_rotations, root_positions):
         """
-        Perform forward kinematics using the given trajectory and local rotations.
+        Perform forward kinematics (calculating joint (key) body position and rotation in gloabl world frame) using the local rotations and root_positions.
         Arguments (where B = batch size, J = number of joints):
          -- rotations: (B, J, 4) tensor of unit quaternions describing the local rotations of each joint.
          -- root_positions: (B, 3) tensor describing the root joint positions.
@@ -240,8 +247,6 @@ class Humanoid_Batch:
             else:
                 jpos = (torch.matmul(rotations_world[self._parents[i]][:, :, 0], expanded_offsets[:, :, i, :, None]).squeeze(-1) + positions_world[self._parents[i]])
                 rot_mat = torch.matmul(rotations_world[self._parents[i]], torch.matmul(self._local_rotation_mat[:,  (i):(i + 1)], rotations[:, :, (i - 1):i, :]))
-                # rot_mat = torch.matmul(rotations_world[self._parents[i]], rotations[:, :, (i - 1):i, :])
-                # print(rotations[:, :, (i - 1):i, :].shape, self._local_rotation_mat.shape)
                 
                 positions_world.append(jpos)
                 rotations_world.append(rot_mat)
@@ -343,8 +348,8 @@ class Humanoid_Batch:
     def mesh_fk(self, pose = None, trans = None):
         """
         Load the mesh from the XML file and merge them into the humanoid based on the current pose.
-        pose shape: (1, 1, link_num, 3)
-        trans shape: (1, 1, 3)
+        pose shape: (1, 1, link_num, 3), which is pose_aa
+        trans shape: (1, 1, 3), whcih is root trans
         """
         if pose is None:
             fk_res = self.fk_batch(torch.zeros(1, 1, len(self.body_names_augment), 3), torch.zeros(1, 1, 3))
@@ -360,7 +365,6 @@ class Humanoid_Batch:
                 continue
             parent_name = geom.attrib['mesh']
             
-
             k = self.mesh_to_body[geom].attrib['name']
             mesh_names = self.body_to_mesh[k]
             body_idx = self.body_names.index(k)
@@ -390,7 +394,7 @@ class Humanoid_Batch:
         # o3d.io.write_triangle_mesh(f"data/{self.cfg.humanoid_type}/combined_{self.cfg.humanoid_type}.stl", merged_mesh)
         return merged_mesh
 
-    
+
     
 @hydra.main(version_base=None, config_path="../../phc/data/cfg", config_name="config")
 def main(cfg: DictConfig):

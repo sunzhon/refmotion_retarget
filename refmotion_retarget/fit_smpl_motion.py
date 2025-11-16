@@ -159,7 +159,6 @@ def process_motion(key_name, key_name_to_pkls, cfg):
     smpl_joints[..., 2] -= height_diff
     robot_joints[..., 2] -= height_diff
 
-    import pdb;pdb.set_trace()
     fk_return = humanoid_fk.fk_batch(pose_aa_robot_new, root_trans[None,:],dt=1.0/fps, return_full=True) # batch of frame_num
     fk_return = EasyDict({key: value if key=="fps" else value.clone().detach().squeeze()  for key, value in fk_return.items()})
 
@@ -176,7 +175,6 @@ def process_motion(key_name, key_name_to_pkls, cfg):
         "smpl_joints": smpl_joints.numpy(),
     })
     all_data.update(fk_return)
-    import pdb;pdb.set_trace()
     
 
     return all_data
