@@ -8,6 +8,7 @@ import numpy as np
 
 from utils.gmr import GeneralMotionRetargeting as GMR
 from utils.gmr.smpl import load_smplx_file, get_smplx_data_offline_fast
+from scipy.spatial.transform import Rotation as sRot
 
 from easydict import EasyDict
 from rich import print
@@ -64,7 +65,7 @@ def process_motion(key_name, key_name_to_pkls, cfg):
     dof_num = dof_pos.shape[1]
     
     pose_aa_robot = np.zeros((frame_num, 1 + dof_num + num_augment_joint, 3))
-    pose_aa_robot[:, 0, :] = root_rot[:, :3]  # 根旋转
+    pose_aa_robot[:, 0, :] = sRot.from_quat(root_rot).as_rotvec()  # 根旋转
     pose_aa_robot[:, 1:1+dof_num, :] = humanoid_fk.dof_axis * dof_pos[:, :, np.newaxis]  # 关节轴角
 
     motion_data = EasyDict({

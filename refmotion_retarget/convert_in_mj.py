@@ -241,8 +241,8 @@ def main(cfg : DictConfig) -> None:
     logger.info(f"📌 Move the robot to env origin location!")
     for key, data in motion_data.items():
         # reset trans_offset to original point
-        init_trans = motion_data[key]["root_trans"][0,:]
-        motion_data[key]["root_trans"][:,:2]-=init_trans[:2]
+        #init_trans = motion_data[key]["root_trans"][0,:]
+        #motion_data[key]["root_trans"][:,:2]-=init_trans[:2]
         #motion_data[key]["fps"] = 33
         fps = motion_data[key]["fps"]
         logger.info(f"data name: {key}, fps: {fps}")
