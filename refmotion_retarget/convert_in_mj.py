@@ -128,7 +128,7 @@ def save_motion_example(curr_motion, curr_motion_key, motion_file, joint_names, 
             raise ValueError(f"'{name}' missing and fallback_shape is None")
 
 
-    root_trans = curr_motion['root_trans']
+    root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
     root_rot = curr_motion["root_rot"]
     dof_pos = curr_motion["dof_pos"] if "dof_pos" in curr_motion.keys() else curr_motion["dof"]
     fps = curr_motion["fps"]
@@ -251,7 +251,9 @@ def main(cfg : DictConfig) -> None:
         if "global_translation_extend" not in motion_data[key]:
             logger.info("[update_fk] Running humanoid forward kinematics...")
             humanoid_fk = Humanoid_Batch(cfg.robot)  # Load forward kinematics model
-            trans = torch.from_numpy(motion_data[key]['root_trans']).float()
+            #import pdb;pdb.set_trace()
+        
+            trans = torch.from_numpy(motion_data[key]['root_trans'] if "root_trans" in motion_data[key].keys() else motion_data[key]['root_trans_offset']).float()
             pose_aa = torch.from_numpy(motion_data[key]['pose_aa']).float() # shape: frame num, 74 (pose params theta: 23+3+3)
             fk_return = humanoid_fk.fk_batch(pose_aa[None,:], trans[None,:],dt=1.0/fps, return_full=True) # batch of frame_num
 
@@ -295,7 +297,7 @@ def main(cfg : DictConfig) -> None:
         fps = curr_motion["fps"]
         logger.info(f"curr_motion_key: {curr_motion_key}, fps: {fps}")
         # Fetch current motion
-        root_trans = curr_motion['root_trans']
+        root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
         root_rot = curr_motion["root_rot"]
         dof_pos = curr_motion["dof_pos"]
         smpl_joints = curr_motion['smpl_joints'] if "smpl_joints" in curr_motion.keys() else None
