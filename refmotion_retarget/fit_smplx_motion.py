@@ -44,7 +44,7 @@ def process_motion(key_name, key_name_to_pkls, cfg):
         # Update task targets.
         smplx_data = smplx_data_frames[i]
         # retarget
-        qpos = retarget.retarget(smplx_data,False)# offset ground 
+        qpos = retarget.retarget(smplx_data, False)# offset ground 
         # save qpos
         qpos_list.append(qpos)
         human_motion_data.append(retarget.scaled_human_data)

@@ -102,7 +102,6 @@ class GeneralMotionRetargeting:
             self.ik_limits.append(mink.VelocityLimit(self.model, VELOCITY_LIMITS)) 
             import pdb;pdb.set_trace()
 
-            
         self.setup_retarget_configuration()
         
         self.ground_offset = 0.0
