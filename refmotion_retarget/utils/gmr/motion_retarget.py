@@ -295,7 +295,7 @@ class GeneralMotionRetargeting:
     def offset_human_data_to_ground(self, human_data):
         """find the lowest point of the human data and offset the human data to the ground"""
         offset_human_data = {}
-        ground_offset = 0.1
+        ground_offset = 0.05
         lowest_pos = np.inf
 
         for body_name in human_data.keys():
@@ -306,6 +306,7 @@ class GeneralMotionRetargeting:
             if pos[2] < lowest_pos:
                 lowest_pos = pos[2]
                 lowest_body_name = body_name
+
         for body_name in human_data.keys():
             pos, quat = human_data[body_name]
             offset_human_data[body_name] = [pos, quat]
