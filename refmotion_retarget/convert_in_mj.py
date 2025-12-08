@@ -313,25 +313,26 @@ def main(cfg : DictConfig) -> None:
         cam.distance = 4.0 ;cam.azimuth = 135; cam.elevation = -10; cam.lookat = [0,0,0]
         cam.type=mj.mjtCamera.mjCAMERA_TRACKING;cam.trackbodyid=1;
 
-        # Close the viewer automatically after 30 wall-seconds.
-        curr_motion_key = motion_data_keys[motion_id]
-        curr_motion = motion_data[curr_motion_key]
-        frame_num = curr_motion['pose_aa'].shape[0]
-        fps = curr_motion["fps"]
-        logger.info(f"curr_motion_key: {curr_motion_key}, fps: {fps}")
-        # Fetch current motion
-        root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
-        root_rot = curr_motion["root_rot"]
-        dof_pos = curr_motion["dof_pos"]
-        smpl_joints = curr_motion['smpl_joints'] if "smpl_joints" in curr_motion.keys() else None
-        robot_bodies = curr_motion['robot_joints'] if "robot_joints" in curr_motion.keys() else None
-        human_motion_data = curr_motion['human_motion_data'] if "human_motion_data" in curr_motion.keys() else None
+        joint_names = [mj_model.joint(i).name for i in range(1, mj_model.njnt)]
+        body_names = [mj_model.body(i).name for i in range(1, mj_model.nbody)]
 
         while viewer.is_running():
-            cam.type=mj.mjtCamera.mjCAMERA_TRACKING
             step_start = time.time()
-            joint_names = [mj_model.joint(i).name for i in range(1, mj_model.njnt)]
-            body_names = [mj_model.body(i).name for i in range(1, mj_model.nbody)]
+            cam.type=mj.mjtCamera.mjCAMERA_TRACKING
+            # Close the viewer automatically after 30 wall-seconds.
+            curr_motion_key = motion_data_keys[motion_id]
+            curr_motion = motion_data[curr_motion_key]
+            frame_num = curr_motion['pose_aa'].shape[0]
+            fps = curr_motion["fps"]
+
+            # Fetch current motion
+            root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
+            root_rot = curr_motion["root_rot"]
+            dof_pos = curr_motion["dof_pos"]
+            smpl_joints = curr_motion['smpl_joints'] if "smpl_joints" in curr_motion.keys() else None
+            robot_bodies = curr_motion['robot_joints'] if "robot_joints" in curr_motion.keys() else None
+            human_motion_data = curr_motion['human_motion_data'] if "human_motion_data" in curr_motion.keys() else None
+
 
             dt = 1.0/fps
             curr_frame = int(time_step/dt) % frame_num
@@ -387,9 +388,9 @@ def main(cfg : DictConfig) -> None:
                 save_motion_example(curr_motion, curr_motion_key, motion_file, joint_names, body_names,robot_body_names)
                 motion_id = (motion_id + 1) % len(motion_data_keys)
                 time_step = 0
-                logger.info(f"Finish and saving data, the total frame is: {curr_frame}")
-                logger.info(f"Waiting 5 seconds for loading next motion key")
-                time.sleep(5)# waiting for 5 seconds
+                logger.info(f"Finish saving data, name: {curr_motion_key}, fps:  {fps}, the total frame is: {curr_frame}")
+                logger.info(f"Waiting 2 seconds for loading next motion key")
+                time.sleep(2)# waiting for 5 seconds
 
 
             ############################################################################
