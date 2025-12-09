@@ -27,7 +27,8 @@ def process_motion(key_name, key_name_to_pkls, cfg):
     
     # Initialize the retargeting system
     retarget = GMR(
-        actual_human_height=actual_human_height,
+            #actual_human_height=actual_human_height,
+        actual_human_height=0.8,
         src_human="smplx",
         tgt_robot=cfg.gmr.get("robot"),
         use_velocity_limit=False
@@ -58,8 +59,6 @@ def process_motion(key_name, key_name_to_pkls, cfg):
 
 
 
-
-    
 @hydra.main(version_base=None, config_path="./../data/cfg", config_name="config")
 def main(cfg: DictConfig) -> None:
     """
@@ -67,7 +66,6 @@ def main(cfg: DictConfig) -> None:
     """
     # Get Amass dataset
     key_name_to_pkls, key_names = get_filtered_amass_data(cfg)
-    
     
     # retarget motions
     all_data = {}

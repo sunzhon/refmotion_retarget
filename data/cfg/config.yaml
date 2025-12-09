@@ -31,7 +31,7 @@ amass_root: ./../data/AMASS
 data_root: ./../../
 gmr:
   smplx_folder: ./../data/
-  robot: lumos_lus2
+  robot: lumos_nix2
 
 
 ####### Testing Configs. ########

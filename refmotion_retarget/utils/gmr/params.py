@@ -7,6 +7,7 @@ ASSET_ROOT = HERE / "../../.." / "assets"
 ROBOT_XML_DICT = {
     "unitree_g1": ASSET_ROOT / "unitree_g1" / "g1_mocap_29dof.xml",
     "lumos_lus2": ASSET_ROOT / "lumos_lus2" / "mjcf/lus2.xml",
+    "lumos_nix2": ASSET_ROOT / "lumos_nix2" / "mjcf/nix2_joint21.xml",
 }
 
 IK_CONFIG_DICT = {
@@ -14,6 +15,7 @@ IK_CONFIG_DICT = {
     "smplx":{
         "unitree_g1": IK_CONFIG_ROOT / "smplx_to_g1.json",
         "lumos_lus2": IK_CONFIG_ROOT / "smplx_to_lus2.json",
+        "lumos_nix2": IK_CONFIG_ROOT / "smplx_to_nix2.json",
     },
     "bvh_lafan1":{
         "unitree_g1": IK_CONFIG_ROOT / "bvh_lafan1_to_g1.json",
@@ -38,11 +40,11 @@ IK_CONFIG_DICT = {
 
 
 ROBOT_BASE_DICT = {
-    "unitree_g1": "pelvis",
     "lumos_lus2": "pelvis",
+    "lumos_nix2": "pelvis",
 }
 
 VIEWER_CAM_DISTANCE_DICT = {
-    "unitree_g1": 2.0,
     "lumos_lus2": 2.0,
+    "lumos_nix2": 2.0,
 }
