@@ -162,6 +162,22 @@ def save_processed_data(all_data: Dict, cfg: DictConfig) -> int:
                 logger.error(f"Failed to save {key_name}.npz: {e}")
                 continue
 
+        # saving qpos to a csv file
+        import csv
+        for key_name, data in all_data.items():
+            try:
+                csv_path = f"{output_dir}/{key_name}.csv"
+                # Write to CSV file
+                if "qpos_list" in data.keys():
+                    with open(csv_path, 'w', newline='', encoding='utf-8') as file:
+                        writer = csv.writer(file)
+                        writer.writerows(data["qpos_list"])
+                    logger.info(f"Saved individual fit data to {csv_path}")
+                    successful_saves += 1
+            except Exception as e:
+                logger.error(f"Failed to save {key_name}.csv: {e}")
+                continue
+
         logger.info(f"Successfully processed and saved {successful_saves}/{len(all_data)} motions")
 
         if successful_saves == 0:

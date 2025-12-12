@@ -54,6 +54,7 @@ def process_motion(key_name, key_name_to_pkls, cfg):
     motion_data = qpos_to_pose(cfg, qpos_list, aligned_fps)
 
     motion_data["human_motion_data"] = human_motion_data
+    motion_data["qpos_list"] = qpos_list
 
     return motion_data
 
