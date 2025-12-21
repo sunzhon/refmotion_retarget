@@ -9,7 +9,7 @@ Follow the steps below to set up the Python environment for this project.
 1. Create a Conda Environment.
 
 ```bash
-conda create -n env_retarget python=3.8
+conda create -n env_retarget python=3.10
 conda activate env_retarget
 ```
 
