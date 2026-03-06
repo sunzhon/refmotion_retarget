@@ -4,8 +4,8 @@ left_foot_name: 'l_foot_roll'
 
 asset:
   assetRoot: "./../../lumos_assets/nix2/"
-  assetFileName: "mjcf/nix2_joint21.xml"
-  urdfFileName: "urdf/nix2_joint21.urdf"
+  assetFileName: "mjcf/nix2_v2.xml"
+  urdfFileName: "urdf/nix2_v2.urdf"
 
 extend_config:
   - joint_name: "head_link"
