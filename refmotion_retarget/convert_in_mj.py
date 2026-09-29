@@ -131,7 +131,7 @@ def save_motion_example(curr_motion, curr_motion_key, motion_file, joint_names, 
 
     root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
     root_rot = curr_motion["root_rot"]
-    dof_pos = curr_motion["dof_pos"] if "dof_pos" in curr_motion.keys() else curr_motion["dof"]
+    dof_pos = curr_motion["dof"] if "dof" in curr_motion.keys() else curr_motion["dof_pos"]
     fps = curr_motion["fps"]
 
     num_frames = len(dof_pos)
@@ -213,9 +213,11 @@ def save_motion_example(curr_motion, curr_motion_key, motion_file, joint_names, 
     # Save
     saving_folder = os.path.join(os.path.dirname(os.path.dirname(motion_file)), "pkl")
     os.makedirs(saving_folder, exist_ok=True)
-    save_path = os.path.join(saving_folder, f"{curr_motion_key+'_fps'+str(fps)}.pkl")
-    joblib.dump({curr_motion_key: saved_data}, save_path)
-    logger.info(f"✅ Saved motion with shape {all_data.shape} and fps: {fps}: {curr_motion_key} → {save_path}")
+    fps_suffix = f"_fps{int(fps)}"
+    output_key = curr_motion_key if curr_motion_key.endswith(fps_suffix) else f"{curr_motion_key}{fps_suffix}"
+    save_path = os.path.join(saving_folder, f"{output_key}.pkl")
+    joblib.dump({output_key: saved_data}, save_path)
+    logger.info(f"✅ Saved motion with shape {all_data.shape} and fps: {fps}: {output_key} → {save_path}")
 
 def load_csv(cfg, motion_file, joint_names):
 
@@ -306,6 +308,14 @@ def main(cfg : DictConfig) -> None:
             #robot_joints = motion_data[key].get("robot_joints") 
             #if robot_joints is not None:
             #    robot_joints[..., 2] -= height_diff
+
+    if cfg.get("save_only", False):
+        joint_names = [mj_model.joint(i).name for i in range(1, mj_model.njnt)]
+        body_names = [mj_model.body(i).name for i in range(1, mj_model.nbody)]
+        robot_body_names = [i[0] for i in cfg.robot.joint_matches]
+        for curr_motion_key in motion_data_keys:
+            save_motion_example(motion_data[curr_motion_key], curr_motion_key, motion_file, joint_names, body_names, robot_body_names)
+        return
 
 
     with mj.viewer.launch_passive(mj_model, mj_data, key_callback=key_call_back, show_left_ui=False, show_right_ui=False) as viewer:
