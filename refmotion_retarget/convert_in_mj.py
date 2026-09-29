@@ -338,7 +338,7 @@ def main(cfg : DictConfig) -> None:
             # Fetch current motion
             root_trans = curr_motion['root_trans'] if "root_trans" in curr_motion.keys() else curr_motion['root_trans_offset']
             root_rot = curr_motion["root_rot"]
-            dof_pos = curr_motion["dof_pos"]
+            dof_pos = curr_motion["dof"] if "dof" in curr_motion.keys() else curr_motion["dof_pos"]
             smpl_joints = curr_motion['smpl_joints'] if "smpl_joints" in curr_motion.keys() else None
             robot_bodies = curr_motion['robot_joints'] if "robot_joints" in curr_motion.keys() else None
             human_motion_data = curr_motion['human_motion_data'] if "human_motion_data" in curr_motion.keys() else None
