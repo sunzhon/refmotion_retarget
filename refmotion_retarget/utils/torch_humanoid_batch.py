@@ -51,7 +51,7 @@ class Humanoid_Batch:
         
         self.mjcf_data = mjcf_data = self.from_mjcf(self.mjcf_file)
         self.body_names = copy.deepcopy(mjcf_data['node_names'])
-        self.joint_names = [copy.deepcopy(mjcf_data["body_to_joint"])[body] for body in self.body_names[1:]]
+        self.joint_names = [copy.deepcopy(mjcf_data["body_to_joint"]).get(body) for body in self.body_names[1:]]
         self._parents = mjcf_data['parent_indices']
         self.body_names_augment = copy.deepcopy(mjcf_data['node_names'])
 
