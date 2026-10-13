@@ -253,6 +253,23 @@ def main(cfg : DictConfig) -> None:
     if os.path.exists(motion_file):
         logger.info(f"Motion file is: {motion_file}")
         motion_data = joblib.load(motion_file)
+        # RobotDataKit nix2-8 fit_motion files are already retargeted and use
+        # a flat schema (fps/root_pos/root_rot/dof_pos).  The original viewer
+        # expects the older SMPL-nested schema, so normalize the flat schema
+        # here instead of attempting SMPL FK on it.
+        if isinstance(motion_data, dict) and {"fps", "root_pos", "root_rot", "dof_pos"}.issubset(motion_data):
+            flat_motion = motion_data
+            motion_data = {
+                cfg.motion_name: {
+                    "fps": flat_motion["fps"],
+                    "root_trans": np.asarray(flat_motion["root_pos"]),
+                    "root_rot": np.asarray(flat_motion["root_rot"]),
+                    "dof_pos": np.asarray(flat_motion["dof_pos"]),
+                }
+            }
+            if "local_body_pos" in flat_motion:
+                motion_data[cfg.motion_name]["robot_joints"] = np.asarray(flat_motion["local_body_pos"])
+            logger.info("Detected flat RobotDataKit fit_motion schema; using direct MuJoCo playback")
         motion_data_keys = list(motion_data.keys())
     else:
         motion_file = f"{cfg.data_root}/motions/{cfg.robot.humanoid_type}/fit_motion/{cfg.motion_name}.csv"
